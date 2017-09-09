@@ -6,12 +6,57 @@
     android:layout_height="match_parent"
     tools:context="com.btrack.btrack_app.MainActivity">
 
-    <Button
-        android:id="@+id/button"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Scan"
-        tools:layout_editor_absoluteX="146dp"
-        tools:layout_editor_absoluteY="16dp" />
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/c1"
+        android:layout_width="375dp"
+        android:layout_height="492dp"
+        android:visibility="visible"
+        tools:layout_constraintTop_creator="1"
+        tools:layout_constraintRight_creator="1"
+        tools:layout_constraintBottom_creator="1"
+        app:layout_constraintBottom_toBottomOf="parent"
+        tools:layout_constraintLeft_creator="1"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.09"
+        android:layout_marginTop="8dp"
+        android:layout_marginLeft="-21dp">
+
+        <EditText
+            android:id="@+id/foundDevices"
+            android:layout_width="330dp"
+            android:layout_height="304dp"
+            android:ems="10"
+            android:lines="20"
+            android:inputType="textMultiLine"
+            tools:layout_editor_absoluteX="22dp"
+            tools:layout_editor_absoluteY="115dp" />
+
+        <Button
+            android:id="@+id/btn_scan"
+            android:layout_width="88dp"
+            android:layout_height="48dp"
+            android:text="Scan"
+            android:textAllCaps="false"
+            tools:text="Scan"
+            tools:layout_constraintTop_creator="1"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
+            tools:layout_constraintLeft_creator="1"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:layout_marginLeft="16dp" />
+
+        <Button
+            android:id="@+id/ext_Button"
+            android:layout_width="109dp"
+            android:layout_height="40dp"
+            android:layout_marginEnd="28dp"
+            android:layout_marginRight="33dp"
+            android:text="Exit"
+            app:layout_constraintRight_toRightOf="parent"
+            tools:layout_constraintRight_creator="1"
+            tools:layout_editor_absoluteY="436dp" />
+    </android.support.constraint.ConstraintLayout>
 
 </android.support.constraint.ConstraintLayout>
