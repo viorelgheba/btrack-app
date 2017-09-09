@@ -27,7 +27,7 @@
             android:layout_width="330dp"
             android:layout_height="304dp"
             android:ems="10"
-            android:lines="20"
+            android:lines="100"
             android:inputType="textMultiLine"
             tools:layout_editor_absoluteX="22dp"
             tools:layout_editor_absoluteY="115dp" />

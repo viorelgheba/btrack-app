@@ -7,7 +7,11 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.le.BluetoothLeAdvertiser;
 import android.bluetooth.le.BluetoothLeScanner;
+import android.bluetooth.le.ScanCallback;
 import android.bluetooth.le.ScanFilter;
+import android.bluetooth.le.ScanRecord;
+import android.bluetooth.le.ScanResult;
+import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -27,7 +31,9 @@ import android.widget.TextView;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Set;
+import java.util.UUID;
 
 import static android.app.PendingIntent.getBroadcast;
 import static com.btrack.btrack_app.R.*;
@@ -36,6 +42,11 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_BLUETOOTH = 1;
     private BluetoothAdapter BTAdapter;
+
+    private ArrayList<com.btrack.btrack_app.BluetoothDevice> bDevices = new ArrayList<com.btrack.btrack_app.BluetoothDevice>();
+    private ScanFilter mScanFilter;
+    private ScanSettings mScanSettings;
+    private BluetoothLeScanner mBluetoothLeScanner;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,6 +75,7 @@ public class MainActivity extends AppCompatActivity {
                 System.exit(0);
             }
         });
+        scanBluetooth();
     }
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
@@ -73,27 +85,38 @@ public class MainActivity extends AppCompatActivity {
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
                 // Discovery has found a device. Get the BluetoothDevice
                 // object and its info from the Intent.
-                BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-                TextView list = (TextView) findViewById(id.foundDevices);
-                list.append(deviceName);
-                list.append("\n");
+                try {
+                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                    int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
+                    int txPower = 6;
+                    if (device.getName() != null) {
+                        registerDevice(device, rssi, txPower);
+                    }
+                } catch (Exception ex) {
+                    String m = ex.getMessage();
+                }
             }
         }
     };
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
+    private void registerDevice(BluetoothDevice device, int rssi, int power) {
+        TextView list = (TextView) findViewById(id.foundDevices);
+        list.append(device.getName());
+        list.append("\n");
+        com.btrack.btrack_app.BluetoothDevice bluetoothDevice = new com.btrack.btrack_app.BluetoothDevice();
+        bluetoothDevice.setName(device.getName());
+        bluetoothDevice.setAddress(device.getAddress());
+        bluetoothDevice.setState(device.getBondState());
+        bluetoothDevice.setSignalStrength(rssi);
+        bluetoothDevice.setSignalPower(power);
 
-        // Don't forget to unregister the ACTION_FOUND receiver.
-        unregisterReceiver(mReceiver);
+        bDevices.add(bluetoothDevice);
     }
-
+    
     private void scanBluetooth() {
 
-        TextView tv = (TextView)findViewById(id.foundDevices);
+        BTAdapter.cancelDiscovery();
+        TextView tv = (TextView) findViewById(id.foundDevices);
         tv.setText("");
 
         if (BTAdapter == null) {
@@ -117,7 +140,10 @@ public class MainActivity extends AppCompatActivity {
 
         BTAdapter.startDiscovery();
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(mReceiver, filter);
+        try {
+            registerReceiver(mReceiver, filter);
+        } catch (Exception ex) {
+            String m = ex.getMessage();
+        }
     }
-
 }
