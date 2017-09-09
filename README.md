@@ -1,2 +1,2 @@
 # btrack-app
-BTrack Android app repository
+BTrack Android app bluetooth scanner
