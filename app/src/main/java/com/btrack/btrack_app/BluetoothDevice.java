@@ -68,16 +68,8 @@ public class BluetoothDevice {
     }
 
     public String getDistanceZone() {
-        double accuracy = getDistance();
+        DistanceCalculator distanceCalculator = new DistanceCalculator(this);
 
-        if (accuracy == -1.0) {
-            return "Unknown";
-        } else if (accuracy < 1) {
-            return "Immediate";
-        } else if (accuracy < 3) {
-            return "Near";
-        } else {
-            return "Far";
-        }
+        return distanceCalculator.getDistanceZone();
     }
 }

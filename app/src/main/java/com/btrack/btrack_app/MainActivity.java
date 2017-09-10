@@ -1,52 +1,28 @@
 package com.btrack.btrack_app;
 
-import android.app.AlertDialog;
-import android.app.Application;
-import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.le.BluetoothLeAdvertiser;
-import android.bluetooth.le.BluetoothLeScanner;
-import android.bluetooth.le.ScanCallback;
-import android.bluetooth.le.ScanFilter;
-import android.bluetooth.le.ScanRecord;
-import android.bluetooth.le.ScanResult;
-import android.bluetooth.le.ScanSettings;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.net.Uri;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.ListView;
 import android.widget.TextView;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.UUID;
 
-import static android.app.PendingIntent.getBroadcast;
 import static com.btrack.btrack_app.R.*;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int REQUEST_BLUETOOTH = 1;
     private BluetoothAdapter BTAdapter;
 
     private ArrayList<com.btrack.btrack_app.BluetoothDevice> bDevices = new ArrayList<com.btrack.btrack_app.BluetoothDevice>();
-    private ScanFilter mScanFilter;
-    private ScanSettings mScanSettings;
-    private BluetoothLeScanner mBluetoothLeScanner;
+
+    private long lastTimeDataWasSend = System.currentTimeMillis();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,15 +42,14 @@ public class MainActivity extends AppCompatActivity {
         });
 
         exitButton = (Button) findViewById(id.ext_Button);
-
         exitButton.setOnClickListener(new View.OnClickListener() {
-
             @Override
             public void onClick(View view) {
 
                 System.exit(0);
             }
         });
+
         scanBluetooth();
     }
 
@@ -82,19 +57,28 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
+
             if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                // Discovery has found a device. Get the BluetoothDevice
-                // object and its info from the Intent.
                 try {
+                    /*do not register devices without name*/
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
-                    int txPower = 6;
+
                     if (device.getName() != null) {
+                        int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
+                        int txPower = 6;
                         registerDevice(device, rssi, txPower);
                     }
                 } catch (Exception ex) {
-                    String m = ex.getMessage();
+                    Dialog dialog = new Dialog(ex.getMessage());
+                    dialog.popup(context, true);
                 }
+
+                if (shouldResetSearch()) {
+                    sendCollectedData();
+                }
+
+            } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
+                sendCollectedData();
             }
         }
     };
@@ -109,27 +93,52 @@ public class MainActivity extends AppCompatActivity {
         bluetoothDevice.setState(device.getBondState());
         bluetoothDevice.setSignalStrength(rssi);
         bluetoothDevice.setSignalPower(power);
-
         bDevices.add(bluetoothDevice);
     }
-    
+
+
+    private void sendCollectedData() {
+        // send data
+        Thread thread = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    HttpDataSender dataSender = new HttpDataSender(bDevices);
+                    dataSender.send();
+                } catch (Exception e) {
+                    Dialog dialog = new Dialog(e.getMessage());
+                    dialog.popup(getBaseContext(), true);
+                }
+            }
+        });
+        thread.start();
+
+        resetSearch();
+    }
+
+    private boolean shouldResetSearch() {
+        long msTime = System.currentTimeMillis();
+        long dif = (msTime - lastTimeDataWasSend) / 1000;
+        int scanDelay = 3;
+        if (Math.abs(dif) > scanDelay) {
+            lastTimeDataWasSend = msTime;
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private void resetSearch() {
+        TextView fDevices = (TextView) findViewById(id.foundDevices);
+        fDevices.setText("");
+        BTAdapter.startDiscovery();
+    }
+
     private void scanBluetooth() {
-
-        BTAdapter.cancelDiscovery();
-        TextView tv = (TextView) findViewById(id.foundDevices);
-        tv.setText("");
-
         if (BTAdapter == null) {
-            new AlertDialog.Builder(this)
-                    .setTitle("Not compatible")
-                    .setMessage("Your phone does not support Bluetooth")
-                    .setPositiveButton("Exit", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int which) {
-                            System.exit(0);
-                        }
-                    })
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
+            Dialog dialog = new Dialog("Your phone does not support Bluetooth");
+            dialog.popup(this, true);
 
             return;
         }
@@ -139,11 +148,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         BTAdapter.startDiscovery();
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        try {
-            registerReceiver(mReceiver, filter);
-        } catch (Exception ex) {
-            String m = ex.getMessage();
-        }
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_FOUND);
+        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED);
+
+        registerReceiver(mReceiver, filter);
     }
 }

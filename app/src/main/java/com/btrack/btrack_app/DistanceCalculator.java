@@ -22,4 +22,18 @@ public class DistanceCalculator {
 
         return (0.89976) * Math.pow(ratio, 7.7095) + 0.111;
     }
+
+    public String getDistanceZone() {
+        double accuracy = getDistance();
+
+        if (accuracy == -1.0) {
+            return "unknown";
+        } else if (accuracy < 1) {
+            return "immediate";
+        } else if (accuracy < 3) {
+            return "near";
+        } else {
+            return "far";
+        }
+    }
 }
