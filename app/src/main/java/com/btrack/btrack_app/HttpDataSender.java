@@ -4,8 +4,10 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
@@ -18,8 +20,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.TimeZone;
 
-class HttpDataSender {
+public class HttpDataSender {
     private ArrayList<BluetoothDevice> deviceList;
+
+    private URL httpUrl;
+    private HttpURLConnection httpUrlConnection;
+
+    private String url = "https://salty-beach-38173.herokuapp.com/api/event";
 
     public HttpDataSender(ArrayList<BluetoothDevice> devices) {
         deviceList = devices;
@@ -32,7 +39,7 @@ class HttpDataSender {
         for (BluetoothDevice device : deviceList) {
             JSONObject deviceJson = new JSONObject();
             deviceJson.put("name", device.getName());
-            deviceJson.put("uuid", device.getUuid());
+            deviceJson.put("uuid", device.getAddress());
             deviceJson.put("signal_strength", device.getSignalStrength());
             deviceJson.put("distance", device.getDistance());
             deviceJson.put("zone", device.getDistanceZone());
@@ -41,7 +48,7 @@ class HttpDataSender {
 
         body.put("beacons", beacons);
         TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm;Z;");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         df.setTimeZone(tz);
 
         body.put("timestamp", df.format(new Date()));
@@ -64,10 +71,8 @@ class HttpDataSender {
 
         try {
             JSONObject json = createRequestBody();
-            HttpURLConnection httpUrlConnection;
             try {
-                String url = "https://salty-beach-38173.herokuapp.com/api/event";
-                URL httpUrl = new URL(url);
+                httpUrl = new URL(url);
                 httpUrlConnection = (HttpURLConnection) httpUrl.openConnection();
                 httpUrlConnection.setRequestProperty("Content-Type", "application/json");
                 httpUrlConnection.setRequestProperty("Accept", "application/json");
@@ -89,15 +94,22 @@ class HttpDataSender {
                 return;
             }
 
-            httpUrlConnection.setDoOutput(true);
-            httpUrlConnection.connect();
-
             OutputStream outputStream = httpUrlConnection.getOutputStream();
             BufferedWriter oWriter = new BufferedWriter(new OutputStreamWriter(outputStream, "UTF-8"));
             oWriter.write(json.toString());
             oWriter.close();
             outputStream.close();
 
+            BufferedReader br = new BufferedReader(new InputStreamReader(httpUrlConnection.getInputStream(), "UTF-8"));
+
+            String line = null;
+            StringBuilder sb = new StringBuilder();
+
+            while ((line = br.readLine()) != null) {
+                sb.append(line);
+            }
+
+            br.close();
             if (httpUrlConnection != null) {
                 httpUrlConnection.disconnect();
             }

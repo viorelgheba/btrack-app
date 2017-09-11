@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
                     if (device.getName() != null) {
-                        int rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
-                        int txPower = 6;
+                        double rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
+                        double txPower = -32;
                         registerDevice(device, rssi, txPower);
                     }
                 } catch (Exception ex) {
@@ -83,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    private void registerDevice(BluetoothDevice device, int rssi, int power) {
+    private void registerDevice(BluetoothDevice device, double rssi, double power) {
         TextView list = (TextView) findViewById(id.foundDevices);
         list.append(device.getName());
         list.append("\n");

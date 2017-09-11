@@ -9,8 +9,8 @@ public class BluetoothDevice {
     protected String address;
     protected Integer state;
     protected String uuid;
-    protected Integer signalStrength;
-    protected Integer signalPower;
+    protected Double signalStrength;
+    protected Double signalPower;
     protected Integer distance;
 
     public String getName() {
@@ -45,19 +45,19 @@ public class BluetoothDevice {
         this.uuid = uuid;
     }
 
-    public Integer getSignalStrength() {
+    public Double getSignalStrength() {
         return signalStrength;
     }
 
-    public void setSignalStrength(Integer signalStrength) {
+    public void setSignalStrength(Double signalStrength) {
         this.signalStrength = signalStrength;
     }
 
-    public Integer getSignalPower() {
+    public Double getSignalPower() {
         return signalPower;
     }
 
-    public void setSignalPower(Integer signalPower) {
+    public void setSignalPower(Double signalPower) {
         this.signalPower = signalPower;
     }
 
